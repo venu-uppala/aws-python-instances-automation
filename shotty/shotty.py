@@ -5,14 +5,44 @@ session = boto3.Session(profile_name='pythonautomation')
 ec2 = session.resource('ec2')
 
 def filter_instances(project):
+    "Filter instances based on project tag"
+
     filters = [{'Name':'tag:Project', 'Values':[project]}]
     return ec2.instances.filter(Filters=filters)
 
 @click.group()
-def instances():
-    "Operations on Ec2 instances"
+def cli():
+    "Shotty command line interface"
 
-@instances.command("list-instances")
+@cli.group("volumes")
+def volumes():
+    "Operations on Ec2 Volumes"
+
+@volumes.command("list")
+@click.option('--project', required=True)
+def list_volumes(project):
+    "List EC2 volumes"
+
+    instances = filter_instances(project);
+    for i in instances:
+
+        for v in i.volumes.all():
+
+            print(','.join((
+            i.id,
+            v.id,
+            v.volume_type,
+            v.state,
+            str(v.size) + ' GiB'))
+            )
+
+    return
+
+@cli.group("instances")
+def instances():
+    "Aws Ec2 instances"
+
+@instances.command("list")
 @click.option('--project', required=True)
 def list_instances(project):
     "List EC2 instances"
@@ -57,4 +87,4 @@ def start_instances(project):
     return
 
 if __name__ == '__main__':
-    instances()
+    cli()
